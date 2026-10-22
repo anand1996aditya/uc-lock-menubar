@@ -51,9 +51,9 @@ struct PopoverView: View {
         .padding(14)
         .background(
             RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .fill(LinearGradient(colors: [Color.orange.opacity(0.16),
-                                              Color.yellow.opacity(0.06),
-                                              Color.clear],
+                .fill(LinearGradient(colors: [Color.orange.opacity(0.24),
+                                              Color.yellow.opacity(0.12),
+                                              Color.white.opacity(0.07)],
                                      startPoint: .topLeading, endPoint: .bottomTrailing))
         )
         .overlay(
@@ -138,7 +138,8 @@ struct PopoverView: View {
     }
 
     private func batteryPill(_ level: Int) -> some View {
-        let color: Color = level <= 20 ? .red : (level <= 50 ? .orange : .green)
+        let color: Color = level <= 20 ? Color(red: 1.0, green: 0.46, blue: 0.40)
+            : (level <= 50 ? .orange : .green)
         let symbol: String = level <= 20 ? "battery.25" : (level <= 50 ? "battery.50" : "battery.100")
         return HStack(spacing: 5) {
             Image(systemName: symbol)
@@ -153,7 +154,8 @@ struct PopoverView: View {
         .foregroundStyle(color)
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
-        .background(color.opacity(0.12), in: Capsule())
+        .background(Color.white.opacity(0.08), in: Capsule())
+        .overlay(Capsule().stroke(color.opacity(0.35), lineWidth: 1))
     }
 
     private func pendingBanner(_ activity: Activity) -> some View {

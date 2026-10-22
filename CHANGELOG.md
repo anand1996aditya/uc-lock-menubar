@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.4.4 — 22 Oct 2026
+
+- Header card is lighter and warmer, so the red battery warning reads clearly.
+- Battery pill has a neutral background, a coloured border and a softer red.
+
 ## 1.4.3 — 22 Oct 2026
 
 - Removed the divider between the header card and the activity list.

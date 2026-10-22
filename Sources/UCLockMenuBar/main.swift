@@ -38,6 +38,7 @@ enum Snapshot {
             await model.refresh()
             try? await Task.sleep(nanoseconds: 3_000_000_000)
             let view = PopoverView(model: model, staticMode: true)
+                .environment(\.colorScheme, .dark)
             let renderer = ImageRenderer(content: view)
             renderer.scale = 2
             if let image = renderer.nsImage,
