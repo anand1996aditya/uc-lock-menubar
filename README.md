@@ -28,6 +28,11 @@ endpoint:
 The app replays the same request headers as the phone app and polls every 25 seconds. It parses
 the JSON locally. No Urban Company push channel is used.
 
+## Who can use it
+
+This is not a sign-in app. It needs a bearer token plus the device, appliance and user IDs from
+your own Urban Company session. The city key must match your city. Expect a manual setup.
+
 ## Setup
 
 1. Copy the bearer token from your own Urban Company app session.
