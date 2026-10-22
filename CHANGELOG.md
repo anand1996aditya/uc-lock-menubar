@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.4.2 — 22 Oct 2026
+
+- Removed the pulsing artwork animation; the transparent cut-out and static glow remain.
+
 ## 1.4.1 — 22 Oct 2026
 
 - Transparent cut-out now uses correct premultiplied alpha, so no white fringe remains.

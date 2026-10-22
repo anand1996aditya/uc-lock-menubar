@@ -5,7 +5,6 @@ struct PopoverView: View {
     var staticMode: Bool = false
     @State private var showSettings = false
     @State private var selectedActivity: Activity?
-    @State private var glowPulse = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -107,11 +106,10 @@ struct PopoverView: View {
                 .blur(radius: 16)
                 .offset(y: 58)
             Circle()
-                .fill(RadialGradient(colors: [Color.orange.opacity(0.34), Color.clear],
+                .fill(RadialGradient(colors: [Color.orange.opacity(0.30), Color.clear],
                                      center: .center, startRadius: 0, endRadius: 78))
                 .frame(width: 150, height: 150)
-                .scaleEffect(glowPulse ? 1.06 : 0.92)
-                .opacity(glowPulse ? 0.95 : 0.55)
+                .opacity(0.8)
                 .blur(radius: 10)
             Group {
                 if let image = model.artworkImage {
@@ -132,18 +130,12 @@ struct PopoverView: View {
                 }
             }
             .frame(width: 80, height: 128)
-            .offset(y: glowPulse ? -1.5 : 1.5)
             .mask(LinearGradient(stops: [.init(color: .white, location: 0.0),
                                          .init(color: .white, location: 0.86),
                                          .init(color: .clear, location: 1.0)],
                                  startPoint: .top, endPoint: .bottom))
         }
         .frame(width: 96, height: 140)
-        .onAppear {
-            withAnimation(.easeInOut(duration: 3).repeatForever(autoreverses: true)) {
-                glowPulse = true
-            }
-        }
     }
 
     private func batteryPill(_ level: Int) -> some View {
