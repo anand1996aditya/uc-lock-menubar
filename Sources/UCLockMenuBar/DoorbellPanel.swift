@@ -119,22 +119,26 @@ struct DoorbellCardView: View {
             Spacer(minLength: 8)
 
             HStack(spacing: 8) {
-                Text("Dismiss")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 7)
-                    .contentShape(Rectangle())
-                    .onTapGesture(perform: onDismiss)
+                Button(action: onDismiss) {
+                    Text("Dismiss")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 7)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
                 Spacer()
-                Text("Open UC Lock")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 7)
-                    .background(Color.accentColor, in: Capsule())
-                    .contentShape(Capsule())
-                    .onTapGesture(perform: onOpen)
+                Button(action: onOpen) {
+                    Text("Open UC Lock")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 7)
+                        .background(Color.accentColor, in: Capsule())
+                        .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
             }
             .padding(.horizontal, 16)
             .padding(.bottom, 16)

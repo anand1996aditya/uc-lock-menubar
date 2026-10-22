@@ -34,6 +34,12 @@ struct Config: Codable {
         try? FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: Config.fileURL.path)
     }
 
+    static func isValidIdentifier(_ raw: String) -> Bool {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.count >= 8 && trimmed.count <= 32 else { return false }
+        return trimmed.allSatisfy { $0.isHexDigit }
+    }
+
     static func template() -> Config {
         Config(
             token: "",

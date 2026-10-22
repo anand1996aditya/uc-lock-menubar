@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.1 — 22 Oct 2026
+
+- Refresh, Settings and Quit are real buttons; Refresh is disabled while loading.
+- Doorbell card Dismiss and Open UC Lock are real buttons.
+- Settings blocks an empty token and rejects non-hex or too-short device and appliance ids.
+- Self-tests cover identifier validation.
+
 ## 1.2.0 — 22 Oct 2026
 
 - Menu bar mark rebuilt from the official UC app icon, with no bell substitution.

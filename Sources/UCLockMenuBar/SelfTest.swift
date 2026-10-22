@@ -19,6 +19,11 @@ enum UCLockSelfTest {
             check(false, "config round trip")
         }
 
+        // Identifier validation
+        check(Config.isValidIdentifier("68e189e68c3a9c00237424a4"), "hex appliance id")
+        check(!Config.isValidIdentifier("zzzzzzzzzz"), "reject non-hex id")
+        check(!Config.isValidIdentifier("abc"), "reject short id")
+
         // Activity parsing from a fake server response
         let fixture: [String: Any] = [
             "success": [

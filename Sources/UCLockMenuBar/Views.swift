@@ -190,21 +190,37 @@ struct PopoverView: View {
                     .lineLimit(1)
             }
             Spacer()
-            Text("Refresh")
-                .font(.system(size: 11, weight: .medium))
-                .foregroundStyle(.secondary)
-                .onTapGesture { Task { await model.refresh() } }
-                .help("Refresh now")
-            Text("Settings")
-                .font(.system(size: 11, weight: .medium))
-                .foregroundStyle(.secondary)
-                .onTapGesture { showSettings = true }
-                .help("Settings")
-            Text("Quit")
-                .font(.system(size: 11, weight: .medium))
-                .foregroundStyle(.secondary)
-                .onTapGesture { NSApplication.shared.terminate(nil) }
-                .help("Quit UC Lock")
+            Button {
+                Task { await model.refresh() }
+            } label: {
+                Text("Refresh")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(model.isRefreshing ? Color.secondary.opacity(0.4) : Color.secondary)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .disabled(model.isRefreshing)
+            .help("Refresh now")
+            Button {
+                showSettings = true
+            } label: {
+                Text("Settings")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .help("Settings")
+            Button {
+                NSApplication.shared.terminate(nil)
+            } label: {
+                Text("Quit")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .help("Quit UC Lock")
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
@@ -320,6 +336,7 @@ struct SettingsView: View {
     @State private var deviceId = ""
     @State private var applianceId = ""
     @State private var saved = false
+    @State private var error = ""
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -342,6 +359,9 @@ struct SettingsView: View {
             if saved {
                 Text("Saved.").font(.system(size: 11)).foregroundStyle(.secondary)
             }
+            if !error.isEmpty {
+                Text(error).font(.system(size: 11)).foregroundStyle(.red)
+            }
         }
         .padding(18)
         .frame(width: 470)
@@ -353,10 +373,26 @@ struct SettingsView: View {
     }
 
     private func save() {
+        error = ""
+        let cleanToken = token.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleanToken.isEmpty else {
+            error = "Paste a valid bearer token before saving."
+            return
+        }
+        let cleanDevice = deviceId.trimmingCharacters(in: .whitespacesAndNewlines)
+        let cleanAppliance = applianceId.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !cleanDevice.isEmpty && !Config.isValidIdentifier(cleanDevice) {
+            error = "Device id should be 8-32 hex characters."
+            return
+        }
+        if !cleanAppliance.isEmpty && !Config.isValidIdentifier(cleanAppliance) {
+            error = "Appliance id should be 8-32 hex characters."
+            return
+        }
         var updated = model.config
-        updated.token = token.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !deviceId.isEmpty { updated.deviceId = deviceId.trimmingCharacters(in: .whitespacesAndNewlines) }
-        if !applianceId.isEmpty { updated.applianceId = applianceId.trimmingCharacters(in: .whitespacesAndNewlines) }
+        updated.token = cleanToken
+        if !cleanDevice.isEmpty { updated.deviceId = cleanDevice }
+        if !cleanAppliance.isEmpty { updated.applianceId = cleanAppliance }
         model.save(updated)
         saved = true
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { dismiss() }
