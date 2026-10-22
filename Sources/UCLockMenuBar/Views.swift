@@ -403,7 +403,7 @@ struct SettingsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Session").font(.system(size: 16, weight: .semibold))
-            Text("The app uses the same bearer token as the Urban Company app. The token is stored with owner-only permissions.")
+            Text("The app uses the same bearer token as the Urban Company app. The token is stored in the macOS Keychain.")
                 .font(.system(size: 11))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)

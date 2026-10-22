@@ -1,6 +1,7 @@
 import Foundation
 
 struct Config: Codable {
+    /// Urban Company bearer token. It is never written to config.json; it lives in the macOS Keychain.
     var token: String
     var deviceId: String
     var applianceId: String
@@ -14,7 +15,67 @@ struct Config: Codable {
     var sessionId: String
     var advertisingId: String
 
+    static let keychainService = "com.secureu.uclock"
+    static let keychainAccount = "bearer-token"
+    /// Field name used by older builds that stored the bearer token as plain text.
+    static let legacyTokenKey = "token"
+
     static let apiBase = "https://www.urbanclap.com/api/v2/supply/appliances/getScreenDetails"
+
+    /// Every stored property except `token`. The bearer token must never be encoded.
+    enum CodingKeys: String, CodingKey {
+        case deviceId, applianceId, userId, cityKey, countryKey, clientKey
+        case versionName, versionCode, bundleVersion, sessionId, advertisingId
+    }
+
+    init(token: String, deviceId: String, applianceId: String, userId: String,
+         cityKey: String, countryKey: String, clientKey: String, versionName: String,
+         versionCode: String, bundleVersion: String, sessionId: String, advertisingId: String) {
+        self.token = token
+        self.deviceId = deviceId
+        self.applianceId = applianceId
+        self.userId = userId
+        self.cityKey = cityKey
+        self.countryKey = countryKey
+        self.clientKey = clientKey
+        self.versionName = versionName
+        self.versionCode = versionCode
+        self.bundleVersion = bundleVersion
+        self.sessionId = sessionId
+        self.advertisingId = advertisingId
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        token = ""
+        deviceId = try container.decodeIfPresent(String.self, forKey: .deviceId) ?? ""
+        applianceId = try container.decodeIfPresent(String.self, forKey: .applianceId) ?? ""
+        userId = try container.decodeIfPresent(String.self, forKey: .userId) ?? ""
+        cityKey = try container.decodeIfPresent(String.self, forKey: .cityKey) ?? "city_bangalore_v2"
+        countryKey = try container.decodeIfPresent(String.self, forKey: .countryKey) ?? "IND"
+        clientKey = try container.decodeIfPresent(String.self, forKey: .clientKey) ?? ""
+        versionName = try container.decodeIfPresent(String.self, forKey: .versionName) ?? "7.6.87"
+        versionCode = try container.decodeIfPresent(String.self, forKey: .versionCode) ?? "726"
+        bundleVersion = try container.decodeIfPresent(String.self, forKey: .bundleVersion) ?? "936"
+        sessionId = try container.decodeIfPresent(String.self, forKey: .sessionId) ?? UUID().uuidString.lowercased()
+        advertisingId = try container.decodeIfPresent(String.self, forKey: .advertisingId) ?? UUID().uuidString.lowercased()
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(deviceId, forKey: .deviceId)
+        try container.encode(applianceId, forKey: .applianceId)
+        try container.encode(userId, forKey: .userId)
+        try container.encode(cityKey, forKey: .cityKey)
+        try container.encode(countryKey, forKey: .countryKey)
+        try container.encode(clientKey, forKey: .clientKey)
+        try container.encode(versionName, forKey: .versionName)
+        try container.encode(versionCode, forKey: .versionCode)
+        try container.encode(bundleVersion, forKey: .bundleVersion)
+        try container.encode(sessionId, forKey: .sessionId)
+        try container.encode(advertisingId, forKey: .advertisingId)
+        // token is deliberately not encoded.
+    }
 
     static var supportDir: URL {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -23,15 +84,67 @@ struct Config: Codable {
     static var fileURL: URL { supportDir.appendingPathComponent("config.json") }
 
     static func load() -> Config? {
-        guard let data = try? Data(contentsOf: fileURL) else { return nil }
-        return try? JSONDecoder().decode(Config.self, from: data)
+        load(from: fileURL, tokenStore: KeychainTokenStore.shared)
+    }
+
+    /// Loads the non-secret config from JSON and the bearer token from the secure store.
+    ///
+    /// The secure store wins. A plain-text token left in an older config.json is
+    /// moved to the secure store and blanked from the JSON (one-time migration).
+    static func load(from url: URL, tokenStore: SecureTokenStore) -> Config? {
+        guard let data = try? Data(contentsOf: url),
+              var config = try? JSONDecoder().decode(Config.self, from: data) else { return nil }
+
+        let legacyToken = legacyPlaintextToken(in: data)
+        var keychainToken: String?
+        do {
+            keychainToken = try tokenStore.read(service: keychainService, account: keychainAccount)
+        } catch {
+            DiagnosticsLog.append("keychain read failed: \(error.localizedDescription)")
+        }
+
+        if let token = keychainToken, !token.isEmpty {
+            config.token = token
+            if !legacyToken.isEmpty {
+                try? config.save(to: url, tokenStore: tokenStore)
+                DiagnosticsLog.append("preferred Keychain bearer token and removed legacy plaintext copy")
+            }
+        } else if !legacyToken.isEmpty {
+            config.token = legacyToken
+            do {
+                try config.save(to: url, tokenStore: tokenStore)
+                DiagnosticsLog.append("migrated bearer token to Keychain")
+            } catch {
+                // Keep the legacy copy so the session still works and migration can retry.
+                DiagnosticsLog.append("keychain migration failed; kept legacy copy: \(error.localizedDescription)")
+            }
+        }
+        return config
     }
 
     func save() throws {
-        try FileManager.default.createDirectory(at: Config.supportDir, withIntermediateDirectories: true)
+        try save(to: Config.fileURL, tokenStore: KeychainTokenStore.shared)
+    }
+
+    /// Saves the non-secret config to JSON and the bearer token to the secure store.
+    /// The JSON never contains the token.
+    func save(to url: URL = Config.fileURL, tokenStore: SecureTokenStore = KeychainTokenStore.shared) throws {
+        try FileManager.default.createDirectory(at: url.deletingLastPathComponent(),
+                                                withIntermediateDirectories: true)
+        if token.isEmpty {
+            try tokenStore.delete(service: Config.keychainService, account: Config.keychainAccount)
+        } else {
+            try tokenStore.write(token, service: Config.keychainService, account: Config.keychainAccount)
+        }
         let data = try JSONEncoder().encode(self)
-        try data.write(to: Config.fileURL, options: [.atomic])
-        try? FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: Config.fileURL.path)
+        try data.write(to: url, options: [.atomic])
+        try? FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: url.path)
+    }
+
+    private static func legacyPlaintextToken(in data: Data) -> String {
+        guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let token = object[legacyTokenKey] as? String else { return "" }
+        return token.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     static func isValidIdentifier(_ raw: String) -> Bool {

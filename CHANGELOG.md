@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.4.7 — 23 Oct 2026
+
+- The UC Lock bearer token now lives in the macOS Keychain (service `com.secureu.uclock`), not in `config.json`.
+- Existing sessions migrate on first launch: the token moves to the Keychain and is blanked from the JSON. Other settings are kept.
+- `config.json` now holds only non-secret settings and keeps `0600` permissions. The Settings screen saves the token to the Keychain.
+- Diagnostics logs and `status.json` are written with `0600`; older `0644` files are repaired on launch.
+- Ad-hoc signing is unchanged. Notarisation needs an Apple Developer ID and is not part of this release.
+
 ## 1.4.6 — 22 Oct 2026
 
 - Battery reading is white for maximum readability; a thin coloured ring keeps the warning cue.

@@ -148,7 +148,145 @@ enum UCLockSelfTest {
             check(false, "menu icon loads")
         }
 
+        // Keychain-backed bearer token storage, migration and log permissions
+        tokenStorageTests(check)
+
         print("UC_UNIT failures=\(failures)")
         return failures
+    }
+
+    /// Exercises Keychain-backed storage, one-time migration and log permissions
+    /// with an in-memory token store. The real Keychain is never touched here.
+    private static func tokenStorageTests(_ check: (Bool, String) -> Void) {
+        let manager = FileManager.default
+        let directory = manager.temporaryDirectory
+            .appendingPathComponent("uc-storage-test-\(UUID().uuidString)", isDirectory: true)
+        try? manager.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? manager.removeItem(at: directory) }
+        let configURL = directory.appendingPathComponent("config.json")
+
+        func writeLegacyJSON(_ token: String) {
+            let legacy: [String: Any] = [
+                "token": token,
+                "deviceId": "2ef0c584868e29bd",
+                "applianceId": "68e189e68c3a9c00237424a4",
+                "userId": "67247d57ad26302e38c76d43",
+                "cityKey": "city_bangalore_v2",
+                "countryKey": "IND",
+                "clientKey": "",
+                "versionName": "7.6.87",
+                "versionCode": "726",
+                "bundleVersion": "936",
+                "sessionId": "session-1",
+                "advertisingId": "advertising-1"
+            ]
+            if let data = try? JSONSerialization.data(withJSONObject: legacy) {
+                try? data.write(to: configURL)
+            }
+        }
+
+        func rawJSON() -> [String: Any] {
+            guard let data = try? Data(contentsOf: configURL),
+                  let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+                return [:]
+            }
+            return object
+        }
+
+        let key = (service: Config.keychainService, account: Config.keychainAccount)
+
+        // Deliberate failure paths must not write to the real diagnostics log.
+        DiagnosticsLog.suppressWrites = true
+        defer { DiagnosticsLog.suppressWrites = false }
+
+        // Legacy plain-text token moves to the secure store and leaves the JSON.
+        writeLegacyJSON("legacy-bearer-token")
+        let store = InMemoryTokenStore()
+        let migrated = Config.load(from: configURL, tokenStore: store)
+        check(migrated?.token == "legacy-bearer-token", "legacy token migrates in memory")
+        check(store.value(service: key.service, account: key.account) == "legacy-bearer-token",
+              "legacy token stored in secure store")
+        check(rawJSON()["token"] == nil, "legacy token removed from config json")
+        check(migrated?.applianceId == "68e189e68c3a9c00237424a4", "migration preserves appliance id")
+        check(migrated?.cityKey == "city_bangalore_v2", "migration preserves city key")
+
+        // The secure store wins over a stale plain-text copy.
+        writeLegacyJSON("stale-json-token")
+        let preferred = Config.load(from: configURL, tokenStore: store)
+        check(preferred?.token == "legacy-bearer-token", "secure store preferred over legacy json")
+        check(rawJSON()["token"] == nil, "stale legacy copy scrubbed when secure store wins")
+
+        // A failed secure-store write keeps the legacy copy and a usable session.
+        writeLegacyJSON("cannot-migrate-token")
+        let brokenStore = InMemoryTokenStore()
+        brokenStore.failWrite = true
+        let fallback = Config.load(from: configURL, tokenStore: brokenStore)
+        check(fallback?.token == "cannot-migrate-token", "session works when secure store write fails")
+        check(rawJSON()["token"] as? String == "cannot-migrate-token",
+              "legacy copy kept when migration fails")
+
+        // Saving writes the token to the store and never to the JSON.
+        var saved = fallback ?? Config.template()
+        saved.token = "new-bearer-token"
+        let saveStore = InMemoryTokenStore()
+        var saveSucceeded = false
+        do {
+            try saved.save(to: configURL, tokenStore: saveStore)
+            saveSucceeded = true
+        } catch {
+            saveSucceeded = false
+        }
+        check(saveSucceeded, "config save succeeds")
+        check(saveStore.value(service: key.service, account: key.account) == "new-bearer-token",
+              "save writes token to secure store")
+        check(rawJSON()["token"] == nil, "save keeps token out of config json")
+        let reloaded = Config.load(from: configURL, tokenStore: saveStore)
+        check(reloaded?.token == "new-bearer-token", "token reloads from secure store")
+
+        // A failed secure-store write makes save fail without writing the JSON.
+        let failingStore = InMemoryTokenStore()
+        failingStore.failWrite = true
+        var failingConfig = reloaded ?? Config.template()
+        failingConfig.token = "will-fail"
+        var saveFailed = false
+        do {
+            try failingConfig.save(to: configURL, tokenStore: failingStore)
+        } catch {
+            saveFailed = true
+        }
+        check(saveFailed, "save reports secure store failure")
+
+        // Signing out clears the stored token.
+        var signedOut = reloaded ?? Config.template()
+        signedOut.token = ""
+        try? signedOut.save(to: configURL, tokenStore: saveStore)
+        check(saveStore.value(service: key.service, account: key.account) == nil,
+              "sign out removes token from secure store")
+        check(rawJSON()["token"] == nil, "sign out keeps token out of config json")
+
+        // A Keychain read error does not crash loading.
+        let unreadable = InMemoryTokenStore()
+        unreadable.failRead = true
+        check(Config.load(from: configURL, tokenStore: unreadable) != nil,
+              "config loads when secure store read fails")
+
+        // Diagnostics logs and status files are owner-only.
+        DiagnosticsLog.suppressWrites = false
+        let logURL = directory.appendingPathComponent("diagnostics.log")
+        DiagnosticsLog.append("permission test", to: logURL)
+        check(fileMode(of: logURL) == 0o600, "diagnostics log created with 0600")
+        try? manager.setAttributes([.posixPermissions: 0o644], ofItemAtPath: logURL.path)
+        DiagnosticsLog.append("permission repair", to: logURL)
+        check(fileMode(of: logURL) == 0o600, "leftover log repaired to 0600")
+        let statusURL = directory.appendingPathComponent("status.json")
+        try? "{}".write(to: statusURL, atomically: true, encoding: .utf8)
+        try? manager.setAttributes([.posixPermissions: 0o644], ofItemAtPath: statusURL.path)
+        DiagnosticsLog.ensurePrivatePermissions(at: statusURL)
+        check(fileMode(of: statusURL) == 0o600, "status file repaired to 0600")
+    }
+
+    private static func fileMode(of url: URL) -> Int? {
+        guard let attributes = try? FileManager.default.attributesOfItem(atPath: url.path) else { return nil }
+        return (attributes[.posixPermissions] as? NSNumber)?.intValue
     }
 }

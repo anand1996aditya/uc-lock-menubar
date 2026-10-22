@@ -36,26 +36,19 @@ your own Urban Company session. The city key must match your city. Expect a manu
 ## Setup
 
 1. Copy the bearer token from your own Urban Company app session.
-2. Create `~/Library/Application Support/UC Lock/config.json` with `0600` permissions:
+2. Launch the app, open Settings, and paste the bearer token, device id and appliance id.
 
-```json
-{
-  "token": "YOUR_SESSION_TOKEN",
-  "deviceId": "YOUR_DEVICE_ID",
-  "applianceId": "YOUR_APPLIANCE_ID",
-  "userId": "YOUR_UC_USER_ID",
-  "cityKey": "city_bangalore_v2",
-  "countryKey": "IND",
-  "clientKey": "",
-  "versionName": "7.6.87",
-  "versionCode": "726",
-  "bundleVersion": "936",
-  "sessionId": "RANDOM_UUID",
-  "advertisingId": "RANDOM_UUID"
-}
-```
+The token is stored in the macOS Keychain (service `com.secureu.uclock`, account
+`bearer-token`). The non-secret settings are saved to
+`~/Library/Application Support/UC Lock/config.json` with `0600` permissions. `config.json`
+never contains the token.
 
-No credentials are compiled into the binary. They stay in Application Support.
+Existing installs keep working. If an older `config.json` still contains a `token` field, the
+app moves it to the Keychain on first launch and blanks the field, keeping every other setting.
+If the Keychain write fails, the old JSON copy is kept so the session still works, and migration
+retries on the next launch.
+
+No credentials are compiled into the binary. They stay on your Mac.
 
 ## Build
 
@@ -85,11 +78,12 @@ an alias, the app shows that portrait. Without this file the app shows a neutral
 ## Privacy
 
 The repository contains no tokens, device IDs, user IDs, phone numbers or personal photos.
-Portraits, credentials and diagnostics stay in `~/Library/Application Support/UC Lock/`.
+The bearer token stays in the macOS Keychain. Portraits, non-secret settings and diagnostics
+stay in `~/Library/Application Support/UC Lock/`, and diagnostics are owner-only (`0600`).
 
 ## Limits
 
-- The session token is fixed in the config. A logout or revocation needs a fresh token.
+- The session token is stored in the Keychain. A logout or revocation needs a fresh token.
 - Photo URLs are signed and expire in about five minutes. The app refreshes them on each poll.
 - No push notifications. The menu bar icon and the in-app banner are the alerting mechanism.
 

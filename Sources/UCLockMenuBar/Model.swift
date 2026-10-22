@@ -23,6 +23,7 @@ final class LockModel: ObservableObject {
     private var shownDoorbellIDs: Set<String> = []
 
     init() {
+        DiagnosticsLog.hardenExistingLogs()
         config = Config.load() ?? Config.template()
         activities = ActivityStore.shared.current
     }
@@ -256,20 +257,7 @@ final class LockModel: ObservableObject {
     }
 
     private func logDiag(_ message: String) {
-        let formatter = ISO8601DateFormatter()
-        let line = "\(formatter.string(from: Date())) \(message)\n"
-        let url = Config.supportDir.appendingPathComponent("diagnostics.log")
-        try? FileManager.default.createDirectory(at: Config.supportDir, withIntermediateDirectories: true)
-        if let handle = try? FileHandle(forWritingTo: url) {
-            handle.seekToEndOfFile()
-            handle.write(line.data(using: .utf8) ?? Data())
-            try? handle.close()
-        } else {
-            try? line.write(to: url, atomically: true, encoding: .utf8)
-        }
-        if let size = try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? Int, size > 262_144 {
-            try? FileManager.default.removeItem(at: url)
-        }
+        DiagnosticsLog.append(message)
     }
 
     private func writeStatus() {
@@ -283,7 +271,13 @@ final class LockModel: ObservableObject {
         ]
         let url = Config.supportDir.appendingPathComponent("status.json")
         if let data = try? JSONSerialization.data(withJSONObject: payload) {
-            try? data.write(to: url)
+            do {
+                try FileManager.default.createDirectory(at: Config.supportDir, withIntermediateDirectories: true)
+                try data.write(to: url)
+                DiagnosticsLog.ensurePrivatePermissions(at: url)
+            } catch {
+                return
+            }
         }
     }
 
