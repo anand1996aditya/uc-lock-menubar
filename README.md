@@ -1,5 +1,7 @@
 # UC Lock
 
+![UC Lock](docs/uc-lock-menubar.png)
+
 A small macOS menu bar app for the Urban Company Native Lock Pro. It shows the lock state,
 battery, recent activity and visitor photos without opening the phone app.
 
