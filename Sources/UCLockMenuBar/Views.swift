@@ -9,7 +9,6 @@ struct PopoverView: View {
     var body: some View {
         VStack(spacing: 0) {
             headerCard
-            Divider()
             if model.needsSetup {
                 setupPrompt
             } else {

@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.4.3 — 22 Oct 2026
+
+- Removed the divider between the header card and the activity list.
+
 ## 1.4.2 — 22 Oct 2026
 
 - Removed the pulsing artwork animation; the transparent cut-out and static glow remain.
