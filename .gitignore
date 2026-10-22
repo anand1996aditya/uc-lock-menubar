@@ -1,0 +1,6 @@
+.build/
+Build/
+.DS_Store
+*.xcuserstate
+preview*.png
+Resources/*.jpg
