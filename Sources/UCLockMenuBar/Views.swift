@@ -8,8 +8,7 @@ struct PopoverView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            header
-                .padding(16)
+            headerCard
             Divider()
             if model.needsSetup {
                 setupPrompt
@@ -34,28 +33,78 @@ struct PopoverView: View {
         }
     }
 
-    private var header: some View {
-        HStack(alignment: .top, spacing: 14) {
-            artwork
-            VStack(alignment: .leading, spacing: 7) {
-                Text(model.device.name)
-                    .font(.system(size: 18, weight: .semibold))
-                    .lineLimit(2)
-                if let battery = model.device.battery {
-                    batteryPill(battery)
+    private var headerCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .center, spacing: 14) {
+                artwork
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(model.device.name)
+                        .font(.system(size: 18, weight: .semibold))
+                        .lineLimit(2)
+                    if let battery = model.device.battery {
+                        batteryPill(battery)
+                    }
                 }
+                Spacer(minLength: 0)
+            }
+            unlockSummary
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .fill(LinearGradient(colors: [Color.orange.opacity(0.16),
+                                              Color.yellow.opacity(0.06),
+                                              Color.clear],
+                                     startPoint: .topLeading, endPoint: .bottomTrailing))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+        )
+        .padding(.horizontal, 14)
+        .padding(.top, 12)
+        .padding(.bottom, 4)
+    }
+
+    private var unlockSummary: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            if let unlock = model.lastUnlock {
+                Text("LAST UNLOCK · \(unlock.timeText)")
+                    .font(.system(size: 9, weight: .bold))
+                    .tracking(0.7)
+                    .foregroundStyle(.secondary)
+                Text(model.lastUnlockPerson ?? unlock.title)
+                    .font(.system(size: 15, weight: .semibold))
+                    .lineLimit(1)
+                if let method = model.lastUnlockMethod {
+                    Text(method)
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+            } else {
+                Text("STATUS")
+                    .font(.system(size: 9, weight: .bold))
+                    .tracking(0.7)
+                    .foregroundStyle(.secondary)
                 Text(model.statusLine)
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
             }
-            Spacer(minLength: 0)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 
     private var artwork: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 12)
+            Circle()
+                .fill(Color.orange.opacity(0.20))
+                .frame(width: 116, height: 116)
+                .blur(radius: 26)
+            RoundedRectangle(cornerRadius: 14)
                 .fill(LinearGradient(colors: [Color.gray.opacity(0.10), Color.gray.opacity(0.03)],
                                      startPoint: .top, endPoint: .bottom))
             if let url = model.device.artworkURL, let cached = ImageCache.shared.image(for: url) {

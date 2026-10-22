@@ -22,6 +22,7 @@ final class LockModel: ObservableObject {
 
     init() {
         config = Config.load() ?? Config.template()
+        activities = ActivityStore.shared.current
     }
 
     var needsSetup: Bool { config.token.isEmpty }
@@ -32,6 +33,21 @@ final class LockModel: ObservableObject {
 
     var lastUnlock: Activity? {
         activities.first { $0.isUnlock }
+    }
+
+    var lastUnlockPerson: String? {
+        guard let unlock = lastUnlock else { return nil }
+        let prefix = "unlocked by "
+        if unlock.title.lowercased().hasPrefix(prefix) {
+            let name = unlock.title.dropFirst(prefix.count).trimmingCharacters(in: .whitespaces)
+            return name.isEmpty ? nil : name
+        }
+        return unlock.title
+    }
+
+    var lastUnlockMethod: String? {
+        guard let method = lastUnlock?.detailText, !method.isEmpty else { return nil }
+        return method
     }
 
     var statusLine: String {
@@ -141,6 +157,7 @@ final class LockModel: ObservableObject {
 
             let newDevice = Parser.device(from: deviceJSON)
             let newActivities = Parser.activities(from: logsJSON)
+            let mergedActivities = ActivityStore.shared.merge(newActivities)
 
             let hadHistory = !knownIDs.isEmpty
             let newIDs = Set(newActivities.map(\.id))
@@ -148,7 +165,7 @@ final class LockModel: ObservableObject {
             knownIDs = newIDs
 
             device = newDevice
-            activities = newActivities
+            activities = mergedActivities
             lastUpdated = Date()
             errorMessage = nil
             logDiag("refresh ok activities=\(newActivities.count) battery=\(newDevice.battery.map(String.init) ?? "?")")

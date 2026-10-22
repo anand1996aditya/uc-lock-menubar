@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.3.0 — 22 Oct 2026
+
+- Activity history is stored locally for 72 hours, then pruned and deleted.
+- Redesigned header card with a soft gradient fade and artwork glow.
+- Last unlock split into time, person and method so nothing is truncated.
+- Self-tests cover history persistence, pruning and unlock detail extraction.
+
 ## 1.2.1 — 22 Oct 2026
 
 - Refresh, Settings and Quit are real buttons; Refresh is disabled while loading.

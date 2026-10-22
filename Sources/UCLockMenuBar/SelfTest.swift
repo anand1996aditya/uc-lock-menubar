@@ -84,6 +84,36 @@ enum UCLockSelfTest {
         check(fresh.isRecent, "fresh doorbell")
         check(!stale.isRecent, "stale doorbell")
 
+        // Last unlock detail extraction
+        let model = LockModel()
+        model.activities = [
+            Activity(id: "unlock", title: "Unlocked by Alex Kumar",
+                     subtitle: "07:21 PM • Via fingerprint", group: "Today",
+                     imageURL: nil, occurredAt: Date(), lockActivityId: nil)
+        ]
+        check(model.lastUnlockPerson == "Alex Kumar", "last unlock person")
+        check(model.lastUnlockMethod == "Via fingerprint", "last unlock method")
+
+        // Activity store: merge, persistence and 72 hour pruning
+        let storeURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("uc-activity-test-\(UUID().uuidString).json")
+        let store = ActivityStore(fileURL: storeURL)
+        let storedFresh = Activity(id: "a1", title: "Door bell rung", subtitle: "08:00 PM",
+                                   group: "Today", imageURL: nil, occurredAt: Date(),
+                                   lockActivityId: nil)
+        let merged = store.merge([storedFresh])
+        check(merged.count == 1, "activity store merge")
+        let reloaded = ActivityStore(fileURL: storeURL)
+        check(reloaded.current.count == 1, "activity store persistence")
+        let old = Activity(id: "old", title: "Door bell rung", subtitle: "08:00 PM",
+                           group: "Today", imageURL: nil,
+                           occurredAt: Date().addingTimeInterval(-80 * 3600),
+                           lockActivityId: nil)
+        _ = store.merge([old])
+        check(!store.current.contains { $0.id == "old" }, "activity store prunes old entries")
+        store.clear()
+        try? FileManager.default.removeItem(at: storeURL)
+
         // Menu bar icon loads from the bundle
         if let url = Bundle.main.url(forResource: "MenuIcon", withExtension: "png"),
            let image = NSImage(contentsOf: url) {
