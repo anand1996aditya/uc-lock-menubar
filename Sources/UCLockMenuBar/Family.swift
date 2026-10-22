@@ -16,15 +16,15 @@ enum Family {
         Config.supportDir.appendingPathComponent("family.json")
     }
 
-    static func members() -> [Member] {
-        guard let data = try? Data(contentsOf: storeURL),
+    static func members(at url: URL = storeURL) -> [Member] {
+        guard let data = try? Data(contentsOf: url),
               let store = try? JSONDecoder().decode(Store.self, from: data) else { return [] }
         return store.members
     }
 
-    static func member(for text: String) -> Member? {
+    static func member(for text: String, at url: URL = storeURL) -> Member? {
         let lower = text.lowercased()
-        return members().first { member in
+        return members(at: url).first { member in
             member.aliases.contains { lower.contains($0.lowercased()) }
         }
     }

@@ -67,15 +67,14 @@ enum UCLockSelfTest {
         check(device.name == "Example smart lock", "device name")
         check(device.battery == 10, "device battery")
 
-        // Family fallback (reads the local family.json if present)
-        let members = Family.members()
-        check(!members.isEmpty, "family config loaded")
-        let unlock = Activity(id: "u1", title: "Unlocked by Alex Kumar", subtitle: "07:21 PM • Via fingerprint",
-                              group: "Today", imageURL: nil, occurredAt: Date(), lockActivityId: nil)
-        check(Family.avatar(for: unlock) != nil, "family avatar for known name")
-        let unknown = Activity(id: "u2", title: "Unlocked by Unknown Person", subtitle: "07:22 PM",
-                               group: "Today", imageURL: nil, occurredAt: Date(), lockActivityId: nil)
-        check(Family.avatar(for: unknown) == nil, "no avatar for unknown name")
+        // Family matching uses a temporary store, never the user's local file.
+        let familyURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("uc-family-test-\(UUID().uuidString).json")
+        let familyJSON = #"{"members":[{"name":"Alex","aliases":["alex"],"role":"Guest","image":"alex.jpg"}]}"#
+        try? familyJSON.write(to: familyURL, atomically: true, encoding: .utf8)
+        check(Family.member(for: "Unlocked by Alex Kumar", at: familyURL) != nil, "family alias matches")
+        check(Family.member(for: "Unlocked by Unknown Person", at: familyURL) == nil, "family alias misses")
+        try? FileManager.default.removeItem(at: familyURL)
 
         // Freshness window
         let fresh = Activity(id: "d1", title: "Door bell rung", subtitle: "07:00 PM", group: "Today",
