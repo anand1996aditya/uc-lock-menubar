@@ -131,6 +131,11 @@ if let index = CommandLine.arguments.firstIndex(of: "--selftest-alert") {
 } else if CommandLine.arguments.contains("--selftest-photo") {
     MainActor.assumeIsolated { PhotoSelftest.run() }
 } else if CommandLine.arguments.contains("--selftest") {
+    MainActor.assumeIsolated {
+        let failures = UCLockSelfTest.run()
+        exit(failures == 0 ? 0 : 1)
+    }
+} else if CommandLine.arguments.contains("--selftest-old") {
     MainActor.assumeIsolated { SelfTest.run() }
 } else if let index = CommandLine.arguments.firstIndex(of: "--snapshot-doorbell") {
     let path = CommandLine.arguments.count > index + 1 ? CommandLine.arguments[index + 1] : "/tmp/uc-doorbell.png"
