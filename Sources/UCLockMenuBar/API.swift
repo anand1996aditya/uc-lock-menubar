@@ -307,7 +307,9 @@ enum Parser {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = "h:mm a"
-        guard let time = formatter.date(from: subtitle.trimmingCharacters(in: .whitespaces)) else { return nil }
+        let timePart = subtitle.components(separatedBy: "•").first?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? subtitle
+        guard let time = formatter.date(from: timePart) else { return nil }
         let calendar = Calendar.current
         let parts = calendar.dateComponents([.hour, .minute], from: time)
         var base = Date()

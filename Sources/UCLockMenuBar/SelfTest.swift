@@ -52,6 +52,7 @@ enum UCLockSelfTest {
         check(activities.first?.isDoorbell == true, "activity doorbell")
         check(activities.first?.imageURL?.absoluteString == "https://example.com/photo.jpg", "activity photo")
         check(activities.first?.timeText == "03:17 PM", "activity time")
+        check(activities.first?.occurredAt != nil, "activity date parsed")
 
         // Device parsing
         let deviceFixture: [String: Any] = [

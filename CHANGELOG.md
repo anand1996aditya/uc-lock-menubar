@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.3.1 — 22 Oct 2026
+
+- Unlock timestamps are parsed from the time part before the method, so history sorts correctly.
+
 ## 1.3.0 — 22 Oct 2026
 
 - Activity history is stored locally for 72 hours, then pruned and deleted.
