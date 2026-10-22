@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.4.6 — 22 Oct 2026
+
+- Battery reading is white for maximum readability; a thin coloured ring keeps the warning cue.
+
 ## 1.4.5 — 22 Oct 2026
 
 - Battery warning now uses a deeper red, with a stronger border and lighter pill.

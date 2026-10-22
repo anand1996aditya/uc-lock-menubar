@@ -151,11 +151,11 @@ struct PopoverView: View {
                     .font(.system(size: 10))
             }
         }
-        .foregroundStyle(color)
+        .foregroundStyle(.white)
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
-        .background(Color.white.opacity(0.12), in: Capsule())
-        .overlay(Capsule().stroke(color.opacity(0.55), lineWidth: 1))
+        .background(Color.white.opacity(0.10), in: Capsule())
+        .overlay(Capsule().stroke(color.opacity(0.5), lineWidth: 1))
     }
 
     private func pendingBanner(_ activity: Activity) -> some View {
