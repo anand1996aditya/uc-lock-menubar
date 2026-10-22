@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.4.1 — 22 Oct 2026
+
+- Transparent cut-out now uses correct premultiplied alpha, so no white fringe remains.
+
+## 1.4.0 — 22 Oct 2026
+
+- Lock artwork background is removed locally, so the product floats on the card.
+- Soft pulsing glow, floor reflection and bottom fade behind the artwork.
+- No image or certificate leaves the Mac during processing.
+
 ## 1.3.1 — 22 Oct 2026
 
 - Unlock timestamps are parsed from the time part before the method, so history sorts correctly.

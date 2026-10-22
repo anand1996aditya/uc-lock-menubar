@@ -115,6 +115,32 @@ enum UCLockSelfTest {
         store.clear()
         try? FileManager.default.removeItem(at: storeURL)
 
+        // Studio background removal keeps the lock and clears the white margins
+        let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: 60, pixelsHigh: 60,
+                                   bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true,
+                                   isPlanar: false, colorSpaceName: .deviceRGB,
+                                   bytesPerRow: 0, bitsPerPixel: 0)
+        if let rep {
+            NSGraphicsContext.saveGraphicsState()
+            NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: rep)
+            NSColor.white.setFill()
+            NSRect(x: 0, y: 0, width: 60, height: 60).fill()
+            NSColor.black.setFill()
+            NSRect(x: 20, y: 18, width: 20, height: 26).fill()
+            NSGraphicsContext.restoreGraphicsState()
+            let source = NSImage(size: NSSize(width: 60, height: 60))
+            source.addRepresentation(rep)
+            if let cleaned = ArtworkProcessor.process(source),
+               let data = cleaned.tiffRepresentation,
+               let bitmap = NSBitmapImageRep(data: data) {
+                check(cleaned.size.width < 60 || cleaned.size.height < 60, "artwork background removed")
+                check((bitmap.colorAt(x: bitmap.pixelsWide / 2, y: bitmap.pixelsHigh / 2)?.alphaComponent ?? 0) > 0.5,
+                      "artwork subject kept")
+            } else {
+                check(false, "artwork background removed")
+            }
+        }
+
         // Menu bar icon loads from the bundle
         if let url = Bundle.main.url(forResource: "MenuIcon", withExtension: "png"),
            let image = NSImage(contentsOf: url) {

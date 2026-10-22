@@ -5,6 +5,7 @@ struct PopoverView: View {
     var staticMode: Bool = false
     @State private var showSettings = false
     @State private var selectedActivity: Activity?
+    @State private var glowPulse = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -100,30 +101,49 @@ struct PopoverView: View {
 
     private var artwork: some View {
         ZStack {
+            Ellipse()
+                .fill(Color.orange.opacity(0.32))
+                .frame(width: 76, height: 20)
+                .blur(radius: 16)
+                .offset(y: 58)
             Circle()
-                .fill(Color.orange.opacity(0.20))
-                .frame(width: 116, height: 116)
-                .blur(radius: 26)
-            RoundedRectangle(cornerRadius: 14)
-                .fill(LinearGradient(colors: [Color.gray.opacity(0.10), Color.gray.opacity(0.03)],
-                                     startPoint: .top, endPoint: .bottom))
-            if let url = model.device.artworkURL, let cached = ImageCache.shared.image(for: url) {
-                Image(nsImage: cached).resizable().scaledToFit().padding(6)
-            } else if let url = model.device.artworkURL {
-                AsyncImage(url: url) { phase in
-                    switch phase {
-                    case .success(let image): image.resizable().scaledToFit()
-                    default: Image(systemName: "lock.rectangle.stack.fill")
-                            .font(.system(size: 30)).foregroundStyle(.secondary)
+                .fill(RadialGradient(colors: [Color.orange.opacity(0.34), Color.clear],
+                                     center: .center, startRadius: 0, endRadius: 78))
+                .frame(width: 150, height: 150)
+                .scaleEffect(glowPulse ? 1.06 : 0.92)
+                .opacity(glowPulse ? 0.95 : 0.55)
+                .blur(radius: 10)
+            Group {
+                if let image = model.artworkImage {
+                    Image(nsImage: image).resizable().scaledToFit()
+                } else if let url = model.device.artworkURL, let cached = ImageCache.shared.image(for: url) {
+                    Image(nsImage: cached).resizable().scaledToFit()
+                } else if let url = model.device.artworkURL {
+                    AsyncImage(url: url) { phase in
+                        switch phase {
+                        case .success(let image): image.resizable().scaledToFit()
+                        default: Image(systemName: "lock.rectangle.stack.fill")
+                                .font(.system(size: 30)).foregroundStyle(.secondary)
+                        }
                     }
+                } else {
+                    Image(systemName: "lock.rectangle.stack.fill")
+                        .font(.system(size: 30)).foregroundStyle(.secondary)
                 }
-                .padding(6)
-            } else {
-                Image(systemName: "lock.rectangle.stack.fill")
-                    .font(.system(size: 30)).foregroundStyle(.secondary)
+            }
+            .frame(width: 80, height: 128)
+            .offset(y: glowPulse ? -1.5 : 1.5)
+            .mask(LinearGradient(stops: [.init(color: .white, location: 0.0),
+                                         .init(color: .white, location: 0.86),
+                                         .init(color: .clear, location: 1.0)],
+                                 startPoint: .top, endPoint: .bottom))
+        }
+        .frame(width: 96, height: 140)
+        .onAppear {
+            withAnimation(.easeInOut(duration: 3).repeatForever(autoreverses: true)) {
+                glowPulse = true
             }
         }
-        .frame(width: 86, height: 128)
     }
 
     private func batteryPill(_ level: Int) -> some View {

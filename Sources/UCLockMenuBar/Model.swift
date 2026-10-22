@@ -9,6 +9,7 @@ final class LockModel: ObservableObject {
     @Published var lastUpdated: Date?
     @Published var errorMessage: String?
     @Published var isRefreshing = false
+    @Published var artworkImage: NSImage?
 
     var onDoorbell: ((Activity) -> Void)?
     var onDoorbellPhoto: ((Activity, URL) -> Void)?
@@ -18,6 +19,7 @@ final class LockModel: ObservableObject {
     private var mqtt: UrbanMQTT?
     private var mqttConnected = false
     private var knownIDs: Set<String> = []
+    private var artworkSource: String?
     private var shownDoorbellIDs: Set<String> = []
 
     init() {
@@ -98,6 +100,18 @@ final class LockModel: ObservableObject {
         client.start()
     }
 
+    private func loadArtwork(_ url: URL?) {
+        guard let url else { return }
+        guard artworkSource != url.absoluteString else { return }
+        artworkSource = url.absoluteString
+        Task { [weak self] in
+            let processed = await ArtworkProcessor.loadAndProcess(url)
+            await MainActor.run {
+                if let processed { self?.artworkImage = processed }
+            }
+        }
+    }
+
     private func handleWake() async {
         logDiag("wake ping")
         try? await Task.sleep(nanoseconds: 300_000_000)
@@ -165,6 +179,7 @@ final class LockModel: ObservableObject {
             knownIDs = newIDs
 
             device = newDevice
+            loadArtwork(newDevice.artworkURL)
             activities = mergedActivities
             lastUpdated = Date()
             errorMessage = nil

@@ -36,6 +36,7 @@ enum Snapshot {
         Task { @MainActor in
             let model = LockModel()
             await model.refresh()
+            try? await Task.sleep(nanoseconds: 3_000_000_000)
             let view = PopoverView(model: model, staticMode: true)
             let renderer = ImageRenderer(content: view)
             renderer.scale = 2
