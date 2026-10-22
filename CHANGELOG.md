@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.4.5 — 22 Oct 2026
+
+- Battery warning now uses a deeper red, with a stronger border and lighter pill.
+
 ## 1.4.4 — 22 Oct 2026
 
 - Header card is lighter and warmer, so the red battery warning reads clearly.

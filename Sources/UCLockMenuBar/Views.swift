@@ -138,7 +138,7 @@ struct PopoverView: View {
     }
 
     private func batteryPill(_ level: Int) -> some View {
-        let color: Color = level <= 20 ? Color(red: 1.0, green: 0.46, blue: 0.40)
+        let color: Color = level <= 20 ? Color(red: 0.76, green: 0.06, blue: 0.08)
             : (level <= 50 ? .orange : .green)
         let symbol: String = level <= 20 ? "battery.25" : (level <= 50 ? "battery.50" : "battery.100")
         return HStack(spacing: 5) {
@@ -154,8 +154,8 @@ struct PopoverView: View {
         .foregroundStyle(color)
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
-        .background(Color.white.opacity(0.08), in: Capsule())
-        .overlay(Capsule().stroke(color.opacity(0.35), lineWidth: 1))
+        .background(Color.white.opacity(0.12), in: Capsule())
+        .overlay(Capsule().stroke(color.opacity(0.55), lineWidth: 1))
     }
 
     private func pendingBanner(_ activity: Activity) -> some View {
