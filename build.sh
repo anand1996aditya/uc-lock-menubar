@@ -28,7 +28,12 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
 </dict>
 </plist>
 PLIST
-codesign --force --identifier io.github.anand1996aditya.uc-lock-menubar --sign - "$APP" 2>/dev/null || true
+SIGN_ID="SecureU Local Code Signing"
+if security find-identity -v -p codesigning 2>/dev/null | grep -q "$SIGN_ID"; then
+  codesign --force --sign "$SIGN_ID" --identifier io.github.anand1996aditya.uc-lock-menubar "$APP" 2>/dev/null || true
+else
+  codesign --force --sign - --identifier io.github.anand1996aditya.uc-lock-menubar "$APP" 2>/dev/null || true
+fi
 echo "Built: $APP"
 
 # The installed copy in ~/Applications is canonical. Keep the build output out of
