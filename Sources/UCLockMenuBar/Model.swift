@@ -23,6 +23,7 @@ final class LockModel: ObservableObject {
     private var shownDoorbellIDs: Set<String> = []
 
     init() {
+        Config.migrateLegacySupportDirectoryIfNeeded()
         DiagnosticsLog.hardenExistingLogs()
         config = Config.load() ?? Config.template()
         activities = ActivityStore.shared.current

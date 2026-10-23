@@ -12,7 +12,7 @@ battery, recent activity and visitor photos without opening the phone app.
 - Recent activity feed, including door bell rings with visitor photos.
 - Full-size photo viewer for door bell events.
 - Optional local portraits for family unlocks. Add your own photos and names in
-  `~/Library/Application Support/UC Lock/family.json`; names are never stored in this repo.
+  `~/Library/Application Support/UCLock/family.json`; names are never stored in this repo.
 - Read-only. The app never unlocks the door and never approves gate requests.
 
 ## How it works
@@ -38,9 +38,9 @@ your own Urban Company session. The city key must match your city. Expect a manu
 1. Copy the bearer token from your own Urban Company app session.
 2. Launch the app, open Settings, and paste the bearer token, device id and appliance id.
 
-The token is stored in the macOS Keychain (service `com.secureu.uclock`, account
+The token is stored in the macOS Keychain (service `io.github.anand1996aditya.uc-lock-menubar`, account
 `bearer-token`). The non-secret settings are saved to
-`~/Library/Application Support/UC Lock/config.json` with `0600` permissions. `config.json`
+`~/Library/Application Support/UCLock/config.json` with `0600` permissions. `config.json`
 never contains the token.
 
 Existing installs keep working. If an older `config.json` still contains a `token` field, the
@@ -58,7 +58,7 @@ No credentials are compiled into the binary. They stay on your Mac.
 
 A LaunchAgent starts it at login:
 
-    ~/Library/LaunchAgents/com.secureu.uclock.plist
+    ~/Library/LaunchAgents/io.github.anand1996aditya.uclock.plist
 
 ## Optional family portraits
 
@@ -79,7 +79,7 @@ an alias, the app shows that portrait. Without this file the app shows a neutral
 
 The repository contains no tokens, device IDs, user IDs, phone numbers or personal photos.
 The bearer token stays in the macOS Keychain. Portraits, non-secret settings and diagnostics
-stay in `~/Library/Application Support/UC Lock/`, and diagnostics are owner-only (`0600`).
+stay in `~/Library/Application Support/UCLock/`, and diagnostics are owner-only (`0600`).
 
 ## Limits
 

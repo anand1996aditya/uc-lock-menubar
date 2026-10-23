@@ -15,7 +15,8 @@ struct Config: Codable {
     var sessionId: String
     var advertisingId: String
 
-    static let keychainService = "com.secureu.uclock"
+    static let keychainService = "io.github.anand1996aditya.uc-lock-menubar"
+    static let legacyKeychainService = "com.secureu.uclock"
     static let keychainAccount = "bearer-token"
     /// Field name used by older builds that stored the bearer token as plain text.
     static let legacyTokenKey = "token"
@@ -79,12 +80,35 @@ struct Config: Codable {
 
     static var supportDir: URL {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        return base.appendingPathComponent("UCLock", isDirectory: true)
+    }
+    static var legacySupportDir: URL {
+        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         return base.appendingPathComponent("UC Lock", isDirectory: true)
     }
     static var fileURL: URL { supportDir.appendingPathComponent("config.json") }
 
+    /// Copies the old application-support folder to the new name on first launch.
+    static func migrateLegacySupportDirectoryIfNeeded() {
+        let fm = FileManager.default
+        guard fm.fileExists(atPath: legacySupportDir.path) else { return }
+        do {
+            try fm.createDirectory(at: supportDir, withIntermediateDirectories: true)
+            let items = try fm.contentsOfDirectory(at: legacySupportDir, includingPropertiesForKeys: nil)
+            for item in items {
+                let destination = supportDir.appendingPathComponent(item.lastPathComponent)
+                if !fm.fileExists(atPath: destination.path) {
+                    try fm.copyItem(at: item, to: destination)
+                }
+            }
+        } catch {
+            DiagnosticsLog.append("support directory migration failed: \(error.localizedDescription)")
+        }
+    }
+
     static func load() -> Config? {
-        load(from: fileURL, tokenStore: KeychainTokenStore.shared)
+        migrateLegacySupportDirectoryIfNeeded()
+        return load(from: fileURL, tokenStore: KeychainTokenStore.shared)
     }
 
     /// Loads the non-secret config from JSON and the bearer token from the secure store.
@@ -99,6 +123,14 @@ struct Config: Codable {
         var keychainToken: String?
         do {
             keychainToken = try tokenStore.read(service: keychainService, account: keychainAccount)
+            if keychainToken == nil || keychainToken == "" {
+                if let legacyToken = try tokenStore.read(service: legacyKeychainService, account: keychainAccount),
+                   !legacyToken.isEmpty {
+                    keychainToken = legacyToken
+                    try? tokenStore.write(legacyToken, service: keychainService, account: keychainAccount)
+                    DiagnosticsLog.append("migrated Keychain bearer token to new service")
+                }
+            }
         } catch {
             DiagnosticsLog.append("keychain read failed: \(error.localizedDescription)")
         }

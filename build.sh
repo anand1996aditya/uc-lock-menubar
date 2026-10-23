@@ -14,12 +14,12 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
 <plist version="1.0">
 <dict>
     <key>CFBundleExecutable</key><string>UCLockMenuBar</string>
-    <key>CFBundleIdentifier</key><string>com.secureu.uclock</string>
+    <key>CFBundleIdentifier</key><string>io.github.anand1996aditya.uc-lock-menubar</string>
     <key>CFBundleName</key><string>UC Lock</string>
     <key>CFBundleDisplayName</key><string>UC Lock</string>
     <key>CFBundlePackageType</key><string>APPL</string>
-    <key>CFBundleShortVersionString</key><string>1.4.7</string>
-    <key>CFBundleVersion</key><string>13</string>
+    <key>CFBundleShortVersionString</key><string>1.4.8</string>
+    <key>CFBundleVersion</key><string>14</string>
     <key>LSUIElement</key><true/>
     <key>CFBundleIconFile</key><string>AppIcon</string>
     <key>CFBundleIconName</key><string>AppIcon</string>
@@ -28,7 +28,7 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
 </dict>
 </plist>
 PLIST
-codesign --force --identifier com.secureu.uclock --sign - "$APP" 2>/dev/null || true
+codesign --force --identifier io.github.anand1996aditya.uc-lock-menubar --sign - "$APP" 2>/dev/null || true
 echo "Built: $APP"
 
 # The installed copy in ~/Applications is canonical. Keep the build output out of

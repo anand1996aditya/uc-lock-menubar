@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.4.8 — 23 Oct 2026
+
+- Bundle identifier is now `io.github.anand1996aditya.uc-lock-menubar`.
+- Application Support folder renamed to `UCLock`; existing data is copied on first launch.
+- Keychain service renamed; the old bearer token is migrated automatically.
+- LaunchAgent label changed to `io.github.anand1996aditya.uclock`.
+
 ## 1.4.7 — 23 Oct 2026
 
 - The UC Lock bearer token now lives in the macOS Keychain (service `com.secureu.uclock`), not in `config.json`.
